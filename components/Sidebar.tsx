@@ -9,13 +9,15 @@ import {
   ShieldCheck, 
   Megaphone, 
   Settings,
-  GraduationCap
+  GraduationCap,
+  LogOut
 } from 'lucide-react';
 import { ViewType } from '../types';
 
 interface SidebarProps {
   activeView: ViewType;
   onViewChange: (view: ViewType) => void;
+  onLogout?: () => void;
 }
 
 const menuItems = [
@@ -29,7 +31,7 @@ const menuItems = [
   { icon: Settings, label: 'Settings' as ViewType },
 ];
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange, onLogout }) => {
   return (
     <aside className="w-64 bg-white h-screen border-r border-gray-200 flex flex-col fixed left-0 top-0 z-50">
       <div className="p-6 flex items-center gap-2">
@@ -57,6 +59,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange }) =>
           </button>
         ))}
       </nav>
+
+      {/* Logout Button */}
+      {onLogout && (
+        <div className="p-4 border-t border-gray-200">
+          <button
+            onClick={onLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-red-600 hover:bg-red-50 group"
+          >
+            <LogOut size={20} className="text-red-500" />
+            <span className="text-sm font-medium">Logout</span>
+          </button>
+        </div>
+      )}
     </aside>
   );
 };

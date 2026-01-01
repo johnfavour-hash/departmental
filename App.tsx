@@ -1,7 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
+import Login from './components/Login';
 import { StatCard } from './components/StatCard';
 import { AnnouncementList } from './components/AnnouncementList';
 import { ProgramCoursesView } from './components/ProgramCoursesView';
@@ -39,12 +41,85 @@ const GROWTH_DATA: ChartDataItem[] = [
   { year: '2029', value: 700 },
 ];
 
-const App: React.FC = () => {
-  const [activeView, setActiveView] = useState<ViewType>('Dashboard');
-  const [announcements, setAnnouncements] = useState<Announcement[]>(INITIAL_ANNOUNCEMENTS);
+// UniEduLogo Component
+export const UniEduLogo: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 120 48" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <text x="60" y="36" fontSize="32" fontWeight="bold" textAnchor="middle" fill="#1d76d2" fontFamily="Inter">uε</text>
+    <text x="60" y="46" fontSize="10" fontWeight="600" textAnchor="middle" fill="#1e293b" fontFamily="Inter">uniedu</text>
+  </svg>
+);
 
-  const renderContent = () => {
-    switch (activeView) {
+const App: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<string>('');
+
+  const handleLoginSuccess = (username?: string) => {
+    setIsAuthenticated(true);
+    setCurrentUser('Admin');
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCurrentUser('');
+  };
+
+  return (
+    <BrowserRouter>
+      {!isAuthenticated ? (
+        <Routes>
+          <Route path="*" element={<Login onLogin={handleLoginSuccess} />} />
+        </Routes>
+      ) : (
+        <DashboardLayout onLogout={handleLogout} currentUser={currentUser} />
+      )}
+    </BrowserRouter>
+  );
+};
+
+interface DashboardLayoutProps {
+  onLogout: () => void;
+  currentUser: string;
+}
+
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout, currentUser }) => {
+  const navigate = useNavigate();
+  const [announcements] = useState<Announcement[]>(INITIAL_ANNOUNCEMENTS);
+
+  const handleViewChange = (view: ViewType) => {
+    const routeMap: Record<ViewType, string> = {
+      'Dashboard': '/dashboard',
+      'Program & Courses': '/program-courses',
+      'Students': '/students',
+      'Staff': '/staff',
+      'Payments': '/payments',
+      'Roles & Permissions': '/roles-permissions',
+      'Announcements': '/announcements',
+      'Settings': '/settings',
+      'Notifications': '/notifications',
+    };
+    navigate(routeMap[view] || '/dashboard');
+  };
+
+  const getActiveViewFromPath = (pathname: string): ViewType => {
+    const routeMap: Record<string, ViewType> = {
+      '/dashboard': 'Dashboard',
+      '/program-courses': 'Program & Courses',
+      '/students': 'Students',
+      '/staff': 'Staff',
+      '/payments': 'Payments',
+      '/roles-permissions': 'Roles & Permissions',
+      '/announcements': 'Announcements',
+      '/settings': 'Settings',
+      '/notifications': 'Notifications',
+    };
+    return routeMap[pathname] || 'Dashboard';
+  };
+
+  const pathname = window.location.pathname;
+  const activeView = getActiveViewFromPath(pathname);
+
+  const renderContent = (view: ViewType) => {
+    switch (view) {
       case 'Dashboard':
         return (
           <div className="space-y-8 animate-in fade-in duration-500">
@@ -109,7 +184,7 @@ const App: React.FC = () => {
         return (
           <div className="flex flex-col items-center justify-center h-[60vh] text-slate-400">
             <Building2 size={48} className="mb-4 text-slate-200" />
-            <h2 className="text-xl font-semibold">{activeView} Section</h2>
+            <h2 className="text-xl font-semibold">{view} Section</h2>
             <p className="mt-2">Connecting to departmental resources...</p>
           </div>
         );
@@ -118,11 +193,22 @@ const App: React.FC = () => {
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar activeView={activeView} onViewChange={setActiveView} />
+      <Sidebar activeView={activeView} onViewChange={handleViewChange} onLogout={onLogout} />
       <main className="flex-1 ml-64 bg-[#F8FAFC]">
-        <Header onViewChange={setActiveView} />
+        <Header onViewChange={handleViewChange} currentUser={currentUser} onLogout={onLogout} />
         <div className="p-8 max-w-[1600px] mx-auto">
-          {renderContent()}
+          <Routes>
+            <Route path="/dashboard" element={renderContent('Dashboard')} />
+            <Route path="/program-courses" element={renderContent('Program & Courses')} />
+            <Route path="/students" element={renderContent('Students')} />
+            <Route path="/staff" element={renderContent('Staff')} />
+            <Route path="/payments" element={renderContent('Payments')} />
+            <Route path="/roles-permissions" element={renderContent('Roles & Permissions')} />
+            <Route path="/announcements" element={renderContent('Announcements')} />
+            <Route path="/settings" element={renderContent('Settings')} />
+            <Route path="/notifications" element={renderContent('Notifications')} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
         </div>
       </main>
     </div>
